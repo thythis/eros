@@ -41,18 +41,17 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { req, em }: MyContext) {
+  me(@Ctx() { req }: MyContext) {
     if (!req.session.userId) {
       return null;
     }
 
-    const user = await em.findOne(User, { id: req.session.userId });
-    return user;
+    return User.findOne(req.session.userId);
   }
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { req, em }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     if (options.username.length <= 2) {
       return {
@@ -75,14 +74,14 @@ export class UserResolver {
       };
     }
     const hashedPassword = await argon2.hash(options.password);
-    const user = em.create(User, {
-      username: options.username,
-      password: hashedPassword,
-    });
+    let user;
     try {
-      await em.persistAndFlush(user);
+      user = await User.create({
+        username: options.username,
+        password: hashedPassword,
+      }).save();
     } catch (err) {
-      console.log(err);
+      console.log("err: ", err);
       if (err.code === "23505") {
         return {
           errors: [
@@ -93,10 +92,9 @@ export class UserResolver {
           ],
         };
       }
-      console.log("message:", err.message);
     }
 
-    req.session.userId = user.id;
+    req.session.userId = user?.id;
 
     return {
       user,
@@ -106,9 +104,9 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async login(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, { username: options.username });
+    const user = await User.findOne({ where: { username: options.username } });
     if (!user) {
       return {
         errors: [

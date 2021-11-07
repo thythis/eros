@@ -1,20 +1,19 @@
 import "reflect-metadata";
-import { MikroORM } from "@mikro-orm/core";
+import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
+import { ApolloServer, Config, ExpressContext } from "apollo-server-express";
+import connectRedis from "connect-redis";
+import cors from "cors";
+import express from "express";
+import session from "express-session";
+import redis from "redis";
+import { buildSchema } from "type-graphql";
+import { createConnection } from "typeorm";
 import { COOKIE_NAEM, __prod__ } from "./const";
 import { Post } from "./entities/Post";
-import microConfig from "./mikro-orm.config";
-import express from "express";
-import { ApolloServer, Config, ExpressContext } from "apollo-server-express";
-import { buildSchema } from "type-graphql";
+import { User } from "./entities/User";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
-import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import { UserResolver } from "./resolvers/user";
-import redis from "redis";
-import session from "express-session";
-import connectRedis from "connect-redis";
-import { MyContext } from "./types";
-import cors from "cors";
 
 async function startServer(config: Config<ExpressContext>) {
   const app = express();
@@ -57,8 +56,16 @@ async function startServer(config: Config<ExpressContext>) {
 }
 
 const main = async () => {
-  const orm = await MikroORM.init(microConfig);
-  await orm.getMigrator().up();
+  const conn = await createConnection({
+    type: "postgres",
+    database: "eros2",
+    username: "postgres",
+    password: "asdf123",
+    logging: true,
+    synchronize: true,
+    entities: [Post, User],
+  });
+
   // const post = orm.em.create(Post, { tittle: "my first post" });
   // await orm.em.persistAndFlush(post);
   // const posts = await orm.em.find(Post, {});
@@ -69,7 +76,7 @@ const main = async () => {
       validate: false,
     }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground({})],
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res }),
+    context: ({ req, res }) => ({ req, res }),
   });
 };
 
