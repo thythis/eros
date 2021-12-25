@@ -14,6 +14,8 @@ import { User } from "./entities/User";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
+import path from "path";
+import { Updoot } from "./entities/Updoot";
 
 async function startServer(config: Config<ExpressContext>) {
   const app = express();
@@ -62,9 +64,13 @@ const main = async () => {
     username: "postgres",
     password: "asdf123",
     logging: true,
+    migrations: [path.join(__dirname, "./migrations/*")],
     synchronize: true,
-    entities: [Post, User],
+    entities: [Post, User, Updoot],
   });
+  await conn.runMigrations();
+
+  // await Post.delete({});
 
   // const post = orm.em.create(Post, { tittle: "my first post" });
   // await orm.em.persistAndFlush(post);
