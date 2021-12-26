@@ -16,6 +16,8 @@ import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import path from "path";
 import { Updoot } from "./entities/Updoot";
+import { createUserLoader } from "./utils/createUserLoader";
+import { createUpdootLoader } from "./utils/createUpdootLoader";
 
 async function startServer(config: Config<ExpressContext>) {
   const app = express();
@@ -82,7 +84,12 @@ const main = async () => {
       validate: false,
     }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground({})],
-    context: ({ req, res }) => ({ req, res }),
+    context: ({ req, res }) => ({
+      req,
+      res,
+      userLoader: createUserLoader(),
+      updootLoader: createUpdootLoader(),
+    }),
   });
 };
 
