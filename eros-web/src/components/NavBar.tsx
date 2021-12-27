@@ -45,7 +45,6 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
           isLoading={logoutFetching}
           onClick={async () => {
             logout();
-            router.reload();
             await apolloClient.resetStore();
           }}
         >
